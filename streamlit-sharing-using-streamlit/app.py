@@ -60,11 +60,12 @@ with tab_regression:
         quarter = st.text_input("Quarter", "Q3")
         business_age_years = st.number_input("Business Age (years)", value=4.5)
         num_employees = st.number_input("Number of Employees", value=12)
-        # These four categories are the exact set the pipeline's
-        # OrdinalEncoder was fitted on.
+        # Lecturer instruction: drop Diploma. Spellings must match the
+        # OrdinalEncoder (no apostrophes on Bachelors / Masters).
         owner_education_level = st.selectbox(
             "Owner Education Level",
-            ["Primary", "Secondary", "Tertiary", "Postgraduate"], index=1)
+            ["Primary", "Secondary", "Certificate", "Bachelors", "Masters", "Doctorate"],
+            index=1)
         monthly_marketing_spend_kes = st.number_input("Monthly Marketing Spend (KES)", value=45000)
         avg_daily_foot_traffic = st.number_input(
             "Avg Daily Foot Traffic (leave 0 if not applicable)", value=0)
@@ -105,7 +106,8 @@ with tab_classification:
         loan_purpose = st.text_input("Loan Purpose", "Working Capital")
         owner_education_level2 = st.selectbox(
             "Owner Education Level",
-            ["Primary", "Secondary", "Tertiary", "Postgraduate"], index=1, key="oel2")
+            ["Primary", "Secondary", "Certificate", "Bachelors", "Masters", "Doctorate"],
+            index=1, key="oel2")
         business_age_years2 = st.number_input("Business Age (years)", value=2.1, key="bay2")
         num_employees2 = st.number_input("Number of Employees", value=4, key="ne2")
         monthly_revenue_kes = st.number_input("Monthly Revenue (KES)", value=850000)
