@@ -62,7 +62,7 @@ At minimum, the video must show, in one continuous walkthrough:
 
 Note that you are required to submit the link to the video and NOT the video itself. The video should NOT be uploaded to your repository—that would be a misuse of GitHub.
 
-**Link to the video:** [ADD VIDEO LINK HERE]
+**Link to the video:** https://www.loom.com/share/897796d8afc44aa294c05e64d7dc3ecd
 
 ## Public URLs
 
