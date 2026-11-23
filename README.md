@@ -108,6 +108,44 @@ Refer to the files below, in the order specified, for more details:
 5. [Reverse Proxy Server and Application Server Setup](app_server_reverse_proxy_server_setup.md) ← How to use Nginx as a reverse proxy server to serve the Flask application through Gunicorn
 6. [Publicly Serving the Model for Validation by Domain Experts](publicly_serving_the_model_for_validation_by_domain_experts.md) ← How to serve the model through Hugging Face, Streamlit, and Render
 
+## Regression
+
+Send a `POST` to `/api/v1/models/farm-income-regressor/predictions` with a JSON
+object containing every input column used by the fitted farm-income pipeline.
+The API loads `model/farm_income_model.joblib` at startup and returns the
+predicted annual income in KES.
+
+In Postman, send the following JSON body to
+`http://127.0.0.1:5000/api/v1/models/farm-income-regressor/predictions`.
+
+```json
+{
+  "years_farming_experience": 12,
+  "soil_quality_score": 65,
+  "market_distance_km": 8,
+  "num_workers_employed": 3,
+  "crop_type": "Coffee",
+  "county": "Kericho",
+  "irrigation_type": null,
+  "cooperative_member": "No"
+}
+```
+
+The response is HTTP 200.
+
+```json
+{"model": "Ridge Regressor", "predicted_annual_farm_income_kes": 226728.09}
+```
+
+If you omit `crop_type`, the response is HTTP 400.
+
+```json
+{"error": "Missing required fields.", "missing_fields": ["crop_type"]}
+```
+
+Export the fitted pipeline with the scikit-learn version pinned in
+`requirements/constraints.txt`.
+
 ## Lab Submission Instructions
 
 - [Lab Submission Instructions](lab_submission_instructions.md)
