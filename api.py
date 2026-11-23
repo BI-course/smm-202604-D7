@@ -81,10 +81,12 @@ classification_pipeline = joblib.load(
 )
 
 clustering_artifact = joblib.load(
-    os.path.join(MODEL_DIR, "kmeans_mall_customer_segmentation.joblib")
+    os.path.join(MODEL_DIR, "farmer_clustering_pipeline.joblib")
 )
+clustering_imputer = clustering_artifact["imputer"]
 clustering_scaler = clustering_artifact["scaler"]
 clustering_kmeans = clustering_artifact["kmeans"]
+clustering_features = clustering_artifact["numeric_features"]
 
 arm_artifact = joblib.load(
     os.path.join(MODEL_DIR, "apriori_recommendation_rules.joblib")
@@ -187,30 +189,60 @@ def predict_credit_risk():
     })
 
 
-# 3. CLUSTERING -- assign a new mall customer to an existing segment
+# 3. CLUSTERING -- assign a farmer to an existing segment
 
 # Sample request (cURL):
-#   curl -X POST http://127.0.0.1:5000/api/v1/models/mall-customer-segmenter/predictions \
+#   curl -X POST http://127.0.0.1:5000/api/v1/models/farmer-segmenter/predictions \
 #        -H "Content-Type: application/json" \
-#        -d '{"Age": 27, "Annual Income (k$)": 45, "Spending Score (1-100)": 72}'
+#        -d '{"farm_size_acres": 4.5, "annual_yield_tonnes": 9.8,
+#             "income_per_acre_kes": 42000, "years_farming_experience": 6,
+#             "market_access_score": 55}'
 #
-# Note: unlike the two Pipelines above, K-Means does not bundle its own
-# scaler, so this is the one endpoint where the scaling step is applied
-# explicitly (scaler.transform(...) then kmeans.predict(...)) -- exactly the
-# two-object pattern the clustering notebook persisted together for this
-# reason. There is still no manual encoding or feature engineering: the
-# three numeric fields are used exactly as the client sends them.
-@app.route("/api/v1/models/mall-customer-segmenter/predictions", methods=["POST"])
-def predict_customer_segment():
-    payload = request.get_json()
-    input_row = pd.DataFrame([payload])
+# Note: the saved artifact holds three fitted objects -- the imputer, the scaler
+# and the K-Means model. A new farmer must go through the imputer and the scaler
+# (fitted on the training data) before K-Means can assign a cluster.
+# market_access_score is optional: it had missing values in the training data,
+# so the fitted imputer fills it with the training median when it is absent.
+FARMER_REQUIRED_FIELDS = [
+    "farm_size_acres",
+    "annual_yield_tonnes",
+    "income_per_acre_kes",
+    "years_farming_experience",
+]
+FARMER_CLUSTER_NAMES = {0: "Smallholder Farmers", 1: "Established Commercial Farmers"}
 
-    scaled_input = clustering_scaler.transform(input_row)
-    assigned_cluster = int(clustering_kmeans.predict(scaled_input)[0])
+
+@app.route("/api/v1/models/farmer-segmenter/predictions", methods=["POST"])
+def predict_farmer_segment():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Request body must be a JSON object."}), 400
+
+    missing = [f for f in FARMER_REQUIRED_FIELDS if payload.get(f) is None]
+    if missing:
+        return jsonify({
+            "error": "Missing required field(s).",
+            "missing_fields": missing,
+        }), 400
+
+    # market_access_score is optional; default to None (the imputer fills it).
+    payload.setdefault("market_access_score", None)
+
+    try:
+        input_row = pd.DataFrame([payload])[clustering_features].astype(float)
+        imputed_input = clustering_imputer.transform(input_row)
+        scaled_input = clustering_scaler.transform(imputed_input)
+        assigned_cluster = int(clustering_kmeans.predict(scaled_input)[0])
+    except Exception as error:
+        return jsonify({
+            "error": "Could not assign a cluster. Check the field values and types.",
+            "details": str(error),
+        }), 400
 
     return jsonify({
         "assigned_cluster": assigned_cluster,
-        "model": "K-Means (k=5, standardized features)",
+        "segment": FARMER_CLUSTER_NAMES.get(assigned_cluster, "Unknown"),
+        "model": "K-Means (k=2, median-imputed, standardized features)",
     })
 
 

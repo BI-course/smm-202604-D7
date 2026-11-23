@@ -115,3 +115,42 @@ Refer to the files below, in the order specified, for more details:
 ## Cleanup Instructions (to be done after submitting the lab)
 
 - [Cleanup Instructions](/admin_instructions/2_instructions_for_project_teardown.md)
+
+## Clustering
+
+Group D's clustering model segments farmers of an agricultural cooperative into two groups with K-Means (k = 2): `Smallholder Farmers` (cluster 0) and `Established Commercial Farmers` (cluster 1). The saved artifact `model/farmer_clustering_pipeline.joblib` holds the fitted imputer, scaler and K-Means model, and is loaded once at startup in `api.py`. Nothing is retrained there.
+
+**Endpoint:** `POST /api/v1/models/farmer-segmenter/predictions`
+
+`farm_size_acres`, `annual_yield_tonnes`, `income_per_acre_kes` and `years_farming_experience` are required. `market_access_score` is optional (missing values are filled with the training median).
+
+**Sample request**
+
+```bash
+curl -X POST http://127.0.0.1:5000/api/v1/models/farmer-segmenter/predictions \
+  -H "Content-Type: application/json" \
+  -d '{"farm_size_acres": 4.5, "annual_yield_tonnes": 9.8, "income_per_acre_kes": 42000, "years_farming_experience": 6, "market_access_score": 55}'
+```
+
+**Sample response (200)**
+
+```json
+{
+  "assigned_cluster": 0,
+  "model": "K-Means (k=2, median-imputed, standardized features)",
+  "segment": "Smallholder Farmers"
+}
+```
+
+**Sample response when required fields are missing (400)**
+
+```json
+{
+  "error": "Missing required field(s).",
+  "missing_fields": [
+    "annual_yield_tonnes",
+    "income_per_acre_kes",
+    "years_farming_experience"
+  ]
+}
+```
