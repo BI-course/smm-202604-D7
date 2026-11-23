@@ -2,51 +2,51 @@
 
 ## Student Details and Individual Member Contributions
 
-**Name of the team on GitHub Classroom:**
+**Name of the team on GitHub Classroom:** smm-202604-D7
 
 **Member 1:**
 
 | **Details**                                                                                                                           | **Comment** |
 |:--------------------------------------------------------------------------------------------------------------------------------------|:------------|
-| **Student ID**                                                                                                                        |             |
-| **Name**                                                                                                                              |             |
-| **What part of the lab did you personally<br/>contribute to (provide a link to the<br/>branch(es)), and what did you learn from it?** |             |
+| **Student ID**                                                                                                                        | 151109 |
+| **Name**                                                                                                                              | Emmanuel Ogaro |
+| **What part of the lab did you personally<br/>contribute to (provide a link to the<br/>branch(es)), and what did you learn from it?** | Branch: [feature/151109-regression](https://github.com/BI-course/smm-202604-D7/tree/feature/151109-regression).<br/><br/>I replaced the sample SME revenue route with Group D's farm income model. The endpoint is `/api/v1/models/farm-income-regressor/predictions`. It loads `model/farm_income_model.joblib` at startup, takes the farm features as JSON, and returns the predicted annual income in KES from the saved Ridge pipeline. If a required field is missing, it returns HTTP 400 and lists the missing fields. I also added a sample request and response to the README. I learned how to serve a fitted scikit-learn pipeline from a file in Flask, without retraining it, and how to check the request body against the columns the model expects. |
 
 **Member 2:**
 
 | **Details**                                                                                                                           | **Comment** |
 |:--------------------------------------------------------------------------------------------------------------------------------------|:------------|
-| **Student ID**                                                                                                                        |             |
-| **Name**                                                                                                                              |             |
-| **What part of the lab did you personally<br/>contribute to (provide a link to the<br/>branch(es)), and what did you learn from it?** |             |
+| **Student ID**                                                                                                                        | 166910 |
+| **Name**                                                                                                                              | Sol Ikamar |
+| **What part of the lab did you personally<br/>contribute to (provide a link to the<br/>branch(es)), and what did you learn from it?** | Branch: [feature/166910-classification](https://github.com/BI-course/smm-202604-D7/tree/feature/166910-classification).<br/><br/>I added the invoice payment risk classifier endpoint at `/api/v1/models/invoice-payment-risk-classifier/predictions`. It loads the saved imblearn pipeline (`model/invoice_payment_risk_classifier.joblib`) once when the API starts and returns the predicted category (On-Time, Late, or Severely Late) together with the class probabilities. A request that is missing required fields gets HTTP 400 and a list of those fields. I also wrote a README section with a sample curl command and response. I learned how to expose a pre-trained classification pipeline, including one that used ADASYN only during training, as a JSON API without fitting anything at runtime. |
 
 **Member 3:**
 
 | **Details**                                                                                                                           | **Comment** |
 |:--------------------------------------------------------------------------------------------------------------------------------------|:------------|
-| **Student ID**                                                                                                                        |             |
-| **Name**                                                                                                                              |             |
-| **What part of the lab did you personally<br/>contribute to (provide a link to the<br/>branch(es)), and what did you learn from it?** |             |
+| **Student ID**                                                                                                                        | 158393 |
+| **Name**                                                                                                                              | Dilcon Kihoro |
+| **What part of the lab did you personally<br/>contribute to (provide a link to the<br/>branch(es)), and what did you learn from it?** | Branch: [feature/158393-clustering](https://github.com/BI-course/smm-202604-D7/tree/feature/158393-clustering).<br/><br/>I added the farmer segmentation endpoint at `/api/v1/models/farmer-segmenter/predictions`. It loads `model/farmer_clustering_pipeline.joblib`, which holds the fitted imputer, scaler and K-Means model (k=2), and returns the cluster number plus the segment name (Smallholder Farmers or Established Commercial Farmers). Missing required fields return HTTP 400. I also added a sample request and response to the README. I learned how to serve a clustering pipeline so a new farmer can be assigned to an existing segment without re-running K-Means in the API. |
 
 **Member 4:**
 
 | **Details**                                                                                                                           | **Comment** |
 |:--------------------------------------------------------------------------------------------------------------------------------------|:------------|
-| **Student ID**                                                                                                                        |             |
-| **Name**                                                                                                                              |             |
-| **What part of the lab did you personally<br/>contribute to (provide a link to the<br/>branch(es)), and what did you learn from it?** |             |
+| **Student ID**                                                                                                                        | 168873 |
+| **Name**                                                                                                                              | Shantelle Nkatha |
+| **What part of the lab did you personally<br/>contribute to (provide a link to the<br/>branch(es)), and what did you learn from it?** | Branch: [feature/168873-recommender](https://github.com/BI-course/smm-202604-D7/tree/feature/168873-recommender).<br/><br/>I added the food delivery recommender endpoint at `/api/v1/models/food-delivery-recommender/predictions`. It loads the precomputed Apriori association rules from `model/food_delivery_recommendation_rules.joblib`, takes a cart of item IDs, and returns ranked product recommendations. If the cart is missing or empty, the endpoint returns a clear error; if no rule matches, it returns an empty list with a short message. I learned how to serve association rules from a saved lookup, instead of running Apriori again inside the API. |
 
 **Member 5:**
 
 | **Details**                                                                                                                           | **Comment** |
 |:--------------------------------------------------------------------------------------------------------------------------------------|:------------|
-| **Student ID**                                                                                                                        |             |
-| **Name**                                                                                                                              |             |
-| **What part of the lab did you personally<br/>contribute to (provide a link to the<br/>branch(es)), and what did you learn from it?** |             |
+| **Student ID**                                                                                                                        | 170186 |
+| **Name**                                                                                                                              | Hassan Kulubya |
+| **What part of the lab did you personally<br/>contribute to (provide a link to the<br/>branch(es)), and what did you learn from it?** | Branches: [feature/170186-deployment](https://github.com/BI-course/smm-202604-D7/tree/feature/170186-deployment) and [integration/all-four-models](https://github.com/BI-course/smm-202604-D7/tree/integration/all-four-models).<br/><br/>I merged the four model branches on `integration/all-four-models`, fixed the README conflict, and added the missing recommender documentation. On `feature/170186-deployment` I set up Docker Compose so the same unmodified `api.py` runs with Gunicorn behind an Nginx reverse proxy, and I deployed that API to Render at https://smm-202604-d7-api.onrender.com. I learned how to put a Flask API behind Nginx in Docker, how to pin the Python and package versions so the saved joblib models still load, and how to publish the same app as a public Render web service. |
 
 ## Chosen Level of Difficulty
 
-**Specify the chosen level of difficulty** (baseline, intermediate, or advanced):
+**Specify the chosen level of difficulty** (baseline, intermediate, or advanced): Intermediate
 
 ## Video Demonstration
 
@@ -62,7 +62,7 @@ At minimum, the video must show, in one continuous walkthrough:
 
 Note that you are required to submit the link to the video and NOT the video itself. The video should NOT be uploaded to your repository—that would be a misuse of GitHub.
 
-**Link to the video:**
+**Link to the video:** [ADD VIDEO LINK HERE]
 
 ## Public URLs
 
@@ -70,7 +70,7 @@ Fill in only the rows that apply to your chosen difficulty level (see Part C bel
 
 | **Deployment target**                             | **URL** |
 |:--------------------------------------------------|:--------|
-| Render (the full `api.py`, all endpoints)         |         |
+| Render (the full `api.py`, all endpoints)         | https://smm-202604-d7-api.onrender.com<br/>POST paths: `/api/v1/models/farm-income-regressor/predictions`, `/api/v1/models/invoice-payment-risk-classifier/predictions`, `/api/v1/models/farmer-segmenter/predictions`, `/api/v1/models/food-delivery-recommender/predictions` |
 | Hugging Face Space (Gradio, one tab per model)    |         |
 | Streamlit Community Cloud app (one tab per model) |         |
 
