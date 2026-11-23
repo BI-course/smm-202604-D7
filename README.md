@@ -235,3 +235,55 @@ curl -X POST http://127.0.0.1:5000/api/v1/models/farmer-segmenter/predictions \
   ]
 }
 ```
+
+## Recommender
+
+Group D's recommender uses Apriori association rules mined from food-delivery orders and saved as `model/food_delivery_recommendation_rules.joblib`. The artifact is a precomputed lookup (antecedent item-set to ranked candidate items) plus a SKU-to-name map. It is loaded once at startup in `api.py`. Apriori is never re-run there.
+
+**Endpoint:** `POST /api/v1/models/food-delivery-recommender/predictions`
+
+`cart` is required and must be a non-empty list of item IDs (for example `F10` for Chicken Biryani). `top_n` is optional and defaults to 3.
+
+**Sample request**
+
+```bash
+curl -X POST http://127.0.0.1:5000/api/v1/models/food-delivery-recommender/predictions \
+  -H "Content-Type: application/json" \
+  -d '{"cart": ["F10", "F11"], "top_n": 3}'
+```
+
+**Sample response (200)**
+
+```json
+{
+  "cart": ["F10", "F11"],
+  "model": "Apriori association rules, cleaned + precomputed lookup",
+  "recommendations": [
+    {
+      "confidence": 0.926,
+      "lift": 5.21,
+      "product_name": "Naan Bread",
+      "sku": "F12"
+    }
+  ]
+}
+```
+
+If no rule matches the cart, the response is still HTTP 200, with an empty list and a short message:
+
+```json
+{
+  "cart": ["F15"],
+  "message": "No matching rule found for this cart, so there are no recommendations.",
+  "model": "Apriori association rules, cleaned + precomputed lookup",
+  "recommendations": []
+}
+```
+
+**Sample response when the cart is missing (400)**
+
+```json
+{
+  "error": "Missing field: 'cart' is required, for example {\"cart\": [\"F10\", \"F11\"]}"
+}
+```
