@@ -153,3 +153,46 @@ Export the fitted pipeline with the scikit-learn version pinned in
 ## Cleanup Instructions (to be done after submitting the lab)
 
 - [Cleanup Instructions](/admin_instructions/2_instructions_for_project_teardown.md)
+
+## Classification
+
+Group D's classification model predicts the payment risk category of a B2B invoice (`On-Time`, `Late` or `Severely Late`). The model is the full `imblearn` pipeline (preprocessing, ADASYN resampling at training time only, and a tuned Logistic Regression) saved as `model/invoice_payment_risk_classifier.joblib`. It is loaded once at startup in `api.py` and is never retrained there.
+
+**Endpoint:** `POST /api/v1/models/invoice-payment-risk-classifier/predictions`
+
+All fields are required except `guarantee_value_kes`, which may be `null` or omitted (it is structurally missing when an invoice has no collateral or guarantee).
+
+**Sample request**
+
+```bash
+curl -X POST http://127.0.0.1:5000/api/v1/models/invoice-payment-risk-classifier/predictions \
+  -H "Content-Type: application/json" \
+  -d '{"client_industry": "Technology", "client_credit_rating": "Good", "client_company_size": "Medium", "payment_method": "Bank Transfer", "has_dispute_history": "No", "collateral_or_guarantee": "No", "payment_terms_days": 30, "invoice_amount_kes": 350000, "client_relationship_years": 4.5, "prior_late_payments_count": 0, "discount_offered_pct": 1.5, "days_outstanding_avg_historical": 25, "guarantee_value_kes": null, "economic_sector_growth_rate_pct": 2.5}'
+```
+
+**Sample response (200)**
+
+```json
+{
+  "class_probabilities": {
+    "Late": 0.0383,
+    "On-Time": 0.9617,
+    "Severely Late": 0.0
+  },
+  "model": "Logistic Regression (tuned, ADASYN-resampled at training only)",
+  "predicted_payment_risk_category": "On-Time"
+}
+```
+
+**Sample response when required fields are missing (400)**
+
+```json
+{
+  "error": "Missing required field(s).",
+  "missing_fields": [
+    "client_credit_rating",
+    "client_company_size",
+    "payment_method"
+  ]
+}
+```

@@ -77,7 +77,7 @@ regression_pipeline = joblib.load(
 )
 
 classification_pipeline = joblib.load(
-    os.path.join(MODEL_DIR, "svc_classifier_for_sme_credit_risk.joblib")
+    os.path.join(MODEL_DIR, "invoice_payment_risk_classifier.joblib")
 )
 
 clustering_artifact = joblib.load(
@@ -125,42 +125,65 @@ def predict_farm_income():
     )
 
 
-# 2. CLASSIFICATION -- predict SME credit risk category (Low/Medium/High)
+# 2. CLASSIFICATION -- predict B2B invoice payment risk (On-Time / Late / Severely Late)
 
 # Sample request (cURL):
-#   curl -X POST http://127.0.0.1:5000/api/v1/models/sme-credit-risk-classifier/predictions \
+#   curl -X POST http://127.0.0.1:5000/api/v1/models/invoice-payment-risk-classifier/predictions \
 #        -H "Content-Type: application/json" \
-#        -d '{"sector": "Retail", "county": "Nairobi", "quarter": "Q2",
-#             "loan_purpose": "Working Capital", "owner_education_level": "Secondary",
-#             "business_age_years": 2.1, "num_employees": 4,
-#             "monthly_revenue_kes": 850000, "loan_amount_kes": 150000,
-#             "loan_term_months": 12, "interest_rate_pct": 16.5,
-#             "collateral_value_kes": null, "debt_to_income_ratio": 0.62,
-#             "credit_score": 590, "num_previous_loans": 1,
-#             "missed_payments_count": 3, "online_presence_score": 40.0,
-#             "customer_satisfaction_score": 3.4, "competitor_density": 6}'
+#        -d '{"client_industry": "Technology", "client_credit_rating": "Good",
+#             "client_company_size": "Medium", "payment_method": "Bank Transfer",
+#             "has_dispute_history": "No", "collateral_or_guarantee": "No",
+#             "payment_terms_days": 30, "invoice_amount_kes": 350000,
+#             "client_relationship_years": 4.5, "prior_late_payments_count": 0,
+#             "discount_offered_pct": 1.5, "days_outstanding_avg_historical": 25,
+#             "guarantee_value_kes": null, "economic_sector_growth_rate_pct": 2.5}'
 #
-#
-# Note: collateral_value_kes is null here because "Working Capital" loans are
-# more often unsecured (structural missingness, not missing at random) --
-# again, the pipeline's imputer + missingness indicator already handles this
-# internally; this route does not need special code for it.
-@app.route("/api/v1/models/sme-credit-risk-classifier/predictions", methods=["POST"])
-def predict_credit_risk():
-    payload = request.get_json()
-    input_row = pd.DataFrame([payload])
+# Note: guarantee_value_kes is optional. It is structurally missing when the
+# invoice has no collateral/guarantee, and the pipeline's imputer + missingness
+# indicator handles that. Every other field is required.
+INVOICE_REQUIRED_FIELDS = [
+    "client_industry", "client_credit_rating", "client_company_size",
+    "payment_method", "has_dispute_history", "collateral_or_guarantee",
+    "payment_terms_days", "invoice_amount_kes", "client_relationship_years",
+    "prior_late_payments_count", "discount_offered_pct",
+    "days_outstanding_avg_historical", "economic_sector_growth_rate_pct",
+]
 
-    predicted_class = classification_pipeline.predict(input_row)[0]
-    predicted_probabilities = classification_pipeline.predict_proba(input_row)[0]
-    class_labels = classification_pipeline.named_steps["model"].classes_
+
+@app.route("/api/v1/models/invoice-payment-risk-classifier/predictions", methods=["POST"])
+def predict_invoice_payment_risk():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Request body must be a JSON object."}), 400
+
+    missing = [f for f in INVOICE_REQUIRED_FIELDS if payload.get(f) is None]
+    if missing:
+        return jsonify({
+            "error": "Missing required field(s).",
+            "missing_fields": missing,
+        }), 400
+
+    # guarantee_value_kes is optional; default to None (the pipeline imputes it).
+    payload.setdefault("guarantee_value_kes", None)
+
+    try:
+        input_row = pd.DataFrame([payload])
+        predicted_class = classification_pipeline.predict(input_row)[0]
+        predicted_probabilities = classification_pipeline.predict_proba(input_row)[0]
+        class_labels = classification_pipeline.named_steps["model"].classes_
+    except Exception as error:
+        return jsonify({
+            "error": "Could not make a prediction. Check the field values and types.",
+            "details": str(error),
+        }), 400
 
     return jsonify({
-        "predicted_credit_risk_category": str(predicted_class),
+        "predicted_payment_risk_category": str(predicted_class),
         "class_probabilities": {
             str(label): round(float(prob), 4)
             for label, prob in zip(class_labels, predicted_probabilities)
         },
-        "model": "Support Vector Classifier (tuned, SMOTE-resampled at training only)",
+        "model": "Logistic Regression (tuned, ADASYN-resampled at training only)",
     })
 
 
