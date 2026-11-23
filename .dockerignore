@@ -1,0 +1,16 @@
+# Build context exclusions for Dockerfile.flask-gunicorn-app / Dockerfile.nginx
+.git
+.github
+.venv
+__pycache__
+**/__pycache__
+*.py[cod]
+.DS_Store
+.env
+.envrc
+container-volumes/ubuntu
+terminals
+.cursor
+.idea
+roughwork
+lab_submission_ANSWERS

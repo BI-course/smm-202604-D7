@@ -1,0 +1,51 @@
+# =============================================================================
+# compose.yaml -- default local stack for this lab.
+#
+# `docker compose up --build` uses this file automatically. It serves the
+# same unmodified api.py with Gunicorn, behind an Nginx reverse proxy.
+#
+# Equivalent core of the lecturer's two-file command, without the optional
+# ubuntu-server teaching container:
+#   docker compose -f Docker-Compose.yaml -f docker-compose-dev.yaml up --build
+# =============================================================================
+
+services:
+  flask-gunicorn-app:
+    image: servingmlmodels-flask-gunicorn-app:1.0.0
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.flask-gunicorn-app
+    expose:
+      - "8000"
+    restart: always
+
+  nginx:
+    image: servingmlmodels-nginx:1.0.0
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./container-volumes/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx-certs:/etc/nginx/certs:ro
+      - nginx-frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - flask-gunicorn-app
+    restart: always
+
+volumes:
+  nginx-certs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./container-volumes/nginx/certs
+
+  nginx-frontend:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./frontend

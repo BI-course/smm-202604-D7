@@ -1,0 +1,12 @@
+# Optional Render Blueprint for the same unmodified api.py.
+# You can also create the web service by hand in the dashboard using these
+# same build and start commands (see the README Deployment section).
+services:
+  - type: web
+    name: smm-202604-d7-api
+    runtime: python
+    buildCommand: pip install -r requirements/base.txt -r requirements/prod.txt -c requirements/constraints.txt
+    startCommand: gunicorn -w 4 -b 0.0.0.0:$PORT api:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.10"

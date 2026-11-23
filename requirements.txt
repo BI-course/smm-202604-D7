@@ -1,0 +1,5 @@
+# Root requirements file for hosts that look here by default (including Render
+# if you leave the default Build Command). Equivalent to the lab's documented:
+#   pip install -r requirements/base.txt -r requirements/prod.txt -c requirements/constraints.txt
+-c requirements/constraints.txt
+-r requirements/prod.txt

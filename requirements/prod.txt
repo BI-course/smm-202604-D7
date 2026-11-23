@@ -1,4 +1,6 @@
 # requirements/prod.txt
--r https://raw.githubusercontent.com/course-files/ServingMLModels/refs/heads/main/requirements/base.txt
+# Local base.txt (not the course-files remote) so Docker and Render stay
+# pinned by requirements/constraints.txt instead of pulling an unpinned file.
+-r base.txt
 
 gunicorn
