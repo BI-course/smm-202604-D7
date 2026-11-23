@@ -87,7 +87,7 @@ clustering_scaler = clustering_artifact["scaler"]
 clustering_kmeans = clustering_artifact["kmeans"]
 
 arm_artifact = joblib.load(
-    os.path.join(MODEL_DIR, "apriori_recommendation_rules.joblib")
+    os.path.join(MODEL_DIR, "food_delivery_recommendation_rules.joblib")
 )
 recommendation_lookup = arm_artifact["recommendation_lookup"]
 sku_lookup = arm_artifact["sku_lookup"]
@@ -214,29 +214,33 @@ def predict_customer_segment():
     })
 
 
-# 4. ASSOCIATION RULE MINING -- recommend products for a shopping cart
+# 4. ASSOCIATION RULE MINING -- recommend food items for a customer's order
 
 # Sample request (cURL):
-#   curl -X POST http://127.0.0.1:5000/api/v1/models/ecommerce-recommender/predictions \
+#   curl -X POST http://127.0.0.1:5000/api/v1/models/food-delivery-recommender/predictions \
 #        -H "Content-Type: application/json" \
-#        -d '{"cart": ["H06", "H07"]}'
+#        -d '{"cart": ["F10", "F11"], "top_n": 3}'
 #
-#   curl -X POST http://127.0.0.1:5000/api/v1/models/ecommerce-recommender/predictions \
+#   curl -X POST http://127.0.0.1:5000/api/v1/models/food-delivery-recommender/predictions \
 #        -H "Content-Type: application/json" \
-#        -d '{"cart": ["P04", "P01"]}'
+#        -d '{"cart": ["F08"]}'
 #
-# Note: there is no scikit-learn ".predict()" here -- the mined association
-# rules were precomputed into a lookup dictionary
-# (antecedent SKU-set -> ranked candidate consequents)
-# during the notebook's persistence stage. This
-# endpoint performs the exact same lookup+rank step a production recommender
-# microservice would perform on every incoming request; it does not mine
-# for the rules again.
-@app.route("/api/v1/models/ecommerce-recommender/predictions", methods=["POST"])
+# Note: the association rules were mined in the lab notebook and saved as a
+# lookup dictionary (antecedent item-set -> ranked candidate consequents).
+# This endpoint only loads and searches that lookup. It does not run Apriori
+# again.
+@app.route("/api/v1/models/food-delivery-recommender/predictions", methods=["POST"])
 def recommend_products():
-    payload = request.get_json()
-    cart = set(payload.get("cart", []))
-    top_n = int(payload.get("top_n", 3))
+    payload = request.get_json(silent=True)
+    if not payload or "cart" not in payload:
+        return jsonify({"error": "Missing field: 'cart' is required, for example {\"cart\": [\"F10\", \"F11\"]}"}), 400
+    if not isinstance(payload["cart"], list) or len(payload["cart"]) == 0:
+        return jsonify({"error": "'cart' must be a non-empty list of item IDs"}), 400
+    cart = set(payload["cart"])
+    try:
+        top_n = int(payload.get("top_n", 3))
+    except (TypeError, ValueError):
+        return jsonify({"error": "'top_n' must be a whole number"}), 400
 
     candidates = {}
     for antecedent, consequent_list in recommendation_lookup.items():
@@ -250,18 +254,21 @@ def recommend_products():
     recommendations = [
         {
             "sku": str(sku),
-            "product_name": sku_lookup.loc[sku, "product_name"],
+            "product_name": sku_lookup[sku]["product_name"],
             "confidence": round(float(confidence), 3),
             "lift": round(float(lift), 2),
         }
         for sku, (confidence, lift) in ranked
     ]
 
-    return jsonify({
+    response = {
         "cart": sorted(cart),
         "recommendations": recommendations,
         "model": "Apriori association rules, cleaned + precomputed lookup",
-    })
+    }
+    if not recommendations:
+        response["message"] = "No matching rule found for this cart, so there are no recommendations."
+    return jsonify(response)
 
 
 # -----------------------------------------------------------------------
